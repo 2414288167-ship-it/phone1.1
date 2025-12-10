@@ -10,7 +10,7 @@ import {
   Save,
   FolderOpen,
 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation"; // ✅ 引入 useSearchParams
+import { useRouter, useSearchParams } from "next/navigation";
 
 // --- 1. 定义数据类型 ---
 interface BookContent {
@@ -43,7 +43,7 @@ interface WorldBookData {
 // 内部组件：使用 searchParams 的逻辑
 function NotesPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams(); // ✅ 在 Suspense 边界内使用
+  const searchParams = useSearchParams();
 
   // --- 2. 状态管理 ---
   const [data, setData] = useState<WorldBookData | null>(null);
@@ -62,15 +62,11 @@ function NotesPageContent() {
         if (!parsed.categories) parsed.categories = [];
         setData(parsed);
 
-        // 🔥🔥🔥 核心修改：处理跳转逻辑 🔥🔥🔥
         const targetCatId = searchParams.get("catId");
         const targetBookId = searchParams.get("bookId");
 
         if (targetCatId) {
-          // 1. 选中对应的分类 Tab
           setActiveTabId(Number(targetCatId));
-
-          // 2. 如果指定了具体的书/条目 ID，自动打开编辑/详情窗口
           if (targetBookId && parsed.books) {
             const targetBook = parsed.books.find(
               (b: Book) => b.id === targetBookId
@@ -80,7 +76,6 @@ function NotesPageContent() {
             }
           }
         } else if (parsed.categories.length > 0) {
-          // 无参数时默认行为
           setActiveTabId(parsed.categories[0].id);
         }
       } catch (e) {
@@ -88,10 +83,9 @@ function NotesPageContent() {
       }
     }
     setIsInitialized(true);
-  }, [searchParams]); // 依赖 searchParams 变化
+  }, [searchParams]);
 
   // --- 4. 核心功能 ---
-
   const saveDataToLocal = (newData: WorldBookData) => {
     setData(newData);
     localStorage.setItem("worldbook_data", JSON.stringify(newData));
@@ -132,12 +126,10 @@ function NotesPageContent() {
     saveDataToLocal({ ...data, books: newBooks });
   };
 
-  // 🔥🔥🔥 核心修改：智能删除按钮逻辑 🔥🔥🔥
   const handleSmartDelete = () => {
     if (!data) return;
 
     if (activeTabId === "all") {
-      // 模式 1: 清空所有
       if (
         confirm(
           "⚠️ 高能预警：确定要清空【所有】世界书数据吗？\n此操作不可恢复！"
@@ -147,7 +139,6 @@ function NotesPageContent() {
         localStorage.removeItem("worldbook_data");
       }
     } else {
-      // 模式 2: 删除当前分类
       const targetCategory = data.categories.find((c) => c.id === activeTabId);
       if (!targetCategory) return;
 
@@ -156,9 +147,7 @@ function NotesPageContent() {
           `🗑️ 确定要删除整本《${targetCategory.name}》吗？\n\n该分类下的所有设定也将被删除。`
         )
       ) {
-        // 1. 过滤掉该分类下的书
         const newBooks = data.books.filter((b) => b.categoryId !== activeTabId);
-        // 2. 过滤掉该分类
         const newCategories = data.categories.filter(
           (c) => c.id !== activeTabId
         );
@@ -168,7 +157,7 @@ function NotesPageContent() {
           books: newBooks,
           categories: newCategories,
         });
-        setActiveTabId("all"); // 删完后回到"全部"
+        setActiveTabId("all");
       }
     }
   };
@@ -218,7 +207,7 @@ function NotesPageContent() {
   // --- 5. 加载状态组件 ---
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-[#f2f4f8] flex items-center justify-center">
+      <div className="h-full flex items-center justify-center bg-[#f2f4f8]">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-300 rounded w-48"></div>
           <div className="h-4 bg-gray-200 rounded w-32"></div>
@@ -235,7 +224,6 @@ function NotesPageContent() {
         ? data?.books || []
         : data?.books.filter((book) => book.categoryId === activeTabId) || [];
 
-    // 获取当前显示的标题（用于Header）
     const currentTitle =
       activeTabId === "all"
         ? "世界书"
@@ -243,8 +231,8 @@ function NotesPageContent() {
 
     return (
       <>
-        {/* Header */}
-        <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md shadow-sm px-4 h-14 flex items-center justify-between">
+        {/* Header - 修改为 flex-none 防止被压缩 */}
+        <header className="flex-none bg-white/90 backdrop-blur-md shadow-sm px-4 h-14 flex items-center justify-between z-20">
           <button
             onClick={() => router.back()}
             className="p-2 -ml-2 text-gray-700 hover:bg-gray-100 rounded-full"
@@ -265,14 +253,13 @@ function NotesPageContent() {
               <Upload size={22} />
             </button>
 
-            {/* 🔥🔥🔥 智能删除按钮：根据当前Tab决定是删全部还是删分类 🔥🔥🔥 */}
             {data && (
               <button
                 onClick={handleSmartDelete}
                 className={`p-2 rounded-full transition-colors ${
                   activeTabId === "all"
-                    ? "text-gray-400 hover:text-red-500 hover:bg-red-50" // 全部模式下灰色，防误触
-                    : "text-red-500 hover:bg-red-50" // 分类模式下红色，显眼
+                    ? "text-gray-400 hover:text-red-500 hover:bg-red-50"
+                    : "text-red-500 hover:bg-red-50"
                 }`}
                 title={
                   activeTabId === "all" ? "清空所有数据" : "删除当前世界书"
@@ -284,8 +271,8 @@ function NotesPageContent() {
           </div>
         </header>
 
-        {/* Tabs */}
-        <div className="bg-white sticky top-14 z-10 shadow-sm border-t border-gray-100">
+        {/* Tabs - 修改为 flex-none */}
+        <div className="flex-none bg-white shadow-sm border-t border-gray-100 z-10">
           <div className="flex px-4 overflow-x-auto no-scrollbar gap-6 h-12 items-center">
             <button
               onClick={() => setActiveTabId("all")}
@@ -313,7 +300,8 @@ function NotesPageContent() {
           </div>
         </div>
 
-        <main className="p-4 pb-20">
+        {/* Main Content - 关键修改：flex-1 和 overflow-y-auto */}
+        <main className="flex-1 overflow-y-auto p-4 pb-20 overscroll-contain">
           {!data ||
           (data.books.length === 0 && data.categories.length === 0) ? (
             <div className="flex flex-col items-center justify-center mt-20 text-gray-400 gap-4">
@@ -338,7 +326,6 @@ function NotesPageContent() {
             <div className="grid grid-cols-2 gap-3">
               {filteredBooks.map((book) => {
                 const isEnabled = book.content?.[0]?.enabled !== false;
-                // 获取第一条内容的 keys 作为显示
                 const keys = book.content?.[0]?.keys?.join(", ") || book.name;
                 const contentText = book.content?.[0]?.content || "暂无内容";
 
@@ -356,8 +343,6 @@ function NotesPageContent() {
                       <h3 className="font-bold text-gray-900 mb-1 line-clamp-2 flex-1 text-sm leading-tight">
                         {keys}
                       </h3>
-
-                      {/* 列表页开关 */}
                       <div
                         onClick={(e) => handleToggleEnable(e, book.id)}
                         className={`shrink-0 w-8 h-4.5 rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
@@ -371,11 +356,9 @@ function NotesPageContent() {
                         />
                       </div>
                     </div>
-
                     <p className="text-xs text-gray-400 line-clamp-3 mt-2 leading-relaxed">
                       {contentText}
                     </p>
-
                     <div className="mt-3 flex justify-between items-end">
                       <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded truncate max-w-[80px]">
                         {data.categories.find((c) => c.id === book.categoryId)
@@ -410,7 +393,8 @@ function NotesPageContent() {
     const isEnabled = currentContent.enabled !== false;
 
     return (
-      <div className="fixed inset-0 z-50 bg-[#f2f4f8] flex flex-col h-[100dvh]">
+      // 关键修改：改为 absolute inset-0，确保在手机框内显示
+      <div className="absolute inset-0 z-50 bg-[#f2f4f8] flex flex-col h-full w-full">
         <header className="bg-white px-4 h-14 flex items-center justify-between shadow-sm flex-shrink-0 z-10">
           <button
             onClick={() => setEditingBook(null)}
@@ -424,7 +408,6 @@ function NotesPageContent() {
           </h1>
 
           <div className="flex items-center gap-3">
-            {/* 详情页开关 */}
             <div
               onClick={handleToggleEnableInEdit}
               className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
@@ -554,7 +537,9 @@ function NotesPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f2f4f8] text-gray-800">
+    // 核心修改：改为 h-full flex flex-col relative
+    // 这样内容区域才能正确继承 flex-1 并滚动
+    <div className="h-full flex flex-col relative bg-[#f2f4f8] text-gray-800">
       <input
         type="file"
         ref={fileInputRef}
@@ -572,7 +557,7 @@ export default function NotesPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#f2f4f8] flex items-center justify-center">
+        <div className="h-full flex items-center justify-center bg-[#f2f4f8]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
             <p className="text-gray-600">加载中...</p>
