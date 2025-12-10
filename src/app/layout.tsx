@@ -16,6 +16,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false, // 禁止双指缩放
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {

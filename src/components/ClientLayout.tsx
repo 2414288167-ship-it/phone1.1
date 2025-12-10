@@ -2,7 +2,6 @@
 
 import React from "react";
 import { AIProvider } from "@/context/AIContext";
-// 👇👇👇 1. 注意这里一定要有花括号 { } 👇👇👇
 import { MyThemeProvider } from "@/lib/MyTheme";
 
 export default function ClientLayout({
@@ -11,21 +10,26 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   return (
-    // 2. 结构必须是：AI 包 Theme，Theme 包 Children
     <AIProvider>
       <MyThemeProvider>
-        {/* 👇👇👇 新增代码开始：全屏固定容器 👇👇👇 */}
-
-        {/* 外层容器：占满屏幕 (100dvh)，禁止整体滚动 (overflow-hidden)，背景深色 */}
-        <div className="flex justify-center w-full h-[100dvh] overflow-hidden bg-[#050a1f]">
-          {/* 内层容器：限制最大宽度 (手机模式)，并在手机上全屏 */}
-          <div className="w-full max-w-[500px] h-full flex flex-col relative shadow-2xl bg-[#050a1f]">
-            {/* 内容区域：让具体的页面内容填满容器 */}
-            <div className="w-full h-full flex flex-col">{children}</div>
+        {/* 外层容器：深色背景(md屏幕)，手机上浅灰 */}
+        <div className="flex justify-center w-full h-[100dvh] overflow-hidden bg-[#f3f4f6] md:bg-[#050a1f]">
+          {/* 内层容器：手机模拟器 */}
+          <div
+            className="w-full max-w-[500px] h-full flex flex-col relative shadow-2xl bg-[#f3f4f6]"
+            // 👇👇👇 核心修改在这里 👇👇👇
+            // 使用 style 直接设置安全距离，比 Tailwind 写法更稳定
+            style={{
+              paddingTop: "env(safe-area-inset-top)", // 避开顶部刘海/灵动岛
+              paddingBottom: "env(safe-area-inset-bottom)", // 避开底部手势小黑条
+            }}
+          >
+            {/* 内容区域 */}
+            <div className="w-full h-full flex flex-col overflow-hidden">
+              {children}
+            </div>
           </div>
         </div>
-
-        {/* 👆👆👆 新增代码结束 👆👆👆 */}
       </MyThemeProvider>
     </AIProvider>
   );
