@@ -1,20 +1,38 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next"; // 引入 Viewport 类型
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-// 👇 1. 引入 UnreadProvider
 import { UnreadProvider } from "@/context/UnreadContext";
-// 👇 2. 【关键！】必须引入 AIProvider，不然 AI 不会思考
 import { AIProvider } from "@/context/AIContext";
-
 import ClientLayout from "@/components/ClientLayout";
+// 👇 引入刚才新建的注册组件
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const inter = Inter({ subsets: ["latin"] });
 
+// 👇 配置 Viewport (Next.js 14+ 推荐写法)
+export const viewport: Viewport = {
+  themeColor: "#10a37f",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // 像原生 App 一样禁止缩放
+};
+
+// 👇 配置 Metadata，关联 manifest
 export const metadata: Metadata = {
   title: "AI Chat App",
   description: "Chat App",
-  icons: { icon: "/favicon.ico" },
+  manifest: "/manifest.json", // 👈 关键：链接 manifest
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/icon-192.png", // iOS 图标
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "AI Chat",
+  },
 };
 
 export default function RootLayout({
@@ -24,17 +42,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="theme-color" content="#ffffff" />
-      </head>
       <body className={`${inter.className} antialiased`}>
-        {/* 
-            👇👇👇 核心逻辑层级顺序 👇👇👇
-            1. 最外层：UnreadProvider (负责通知和声音)
-            2. 中间层：AIProvider (负责思考和发消息，它需要调用 Unread 的功能)
-            3. 里层：ClientLayout (负责页面布局)
-        */}
+        {/* 👇 插入注册组件，让 Service Worker 生效 */}
+        <ServiceWorkerRegister />
+
         <UnreadProvider>
           <AIProvider>
             <ClientLayout>{children}</ClientLayout>
