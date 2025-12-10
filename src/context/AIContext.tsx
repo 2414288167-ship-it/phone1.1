@@ -69,6 +69,7 @@ const getStickerPrompt = () => {
   if (typeof window === "undefined") return "";
   try {
     const saved = localStorage.getItem("custom_stickers");
+    // 你的默认占位符
     const safeBase64 =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 
@@ -81,8 +82,10 @@ const getStickerPrompt = () => {
 
     if (stickers.length === 0) return "";
 
+    // 【关键修改 1】直接生成完整的 Markdown 代码供 AI 抄写
+    // 格式变成： 关键词【开心】 -> ![sticker](URL)
     const stickerListStr = stickers
-      .map((s) => `- [${s.desc}](${s.url})`)
+      .map((s) => `• 当你想表达【${s.desc}】时，必须输出：![sticker](${s.url})`)
       .join("\n");
 
     return `
@@ -95,6 +98,19 @@ const getStickerPrompt = () => {
 2. **严禁**捏造 URL。
 3. **严禁**使用 files.catbox.moe 或 postimg.cc 的链接，除非它们出现在下表中。
 4. 必须完全照抄 URL（通常是很长的 data:image... 字符串），不要截断。
+
+### 🖼️【表情包发送协议 (最高优先级)】
+你无法生成图片，也无法看到图片。你只能通过**“检索数据库”**来发送预设的图片。
+
+**严禁行为：**
+❌ 严禁使用文字描述画面（如：*发送了一张开心的图片*、[图片]、(jpg) 等）。
+❌ 严禁捏造 URL。必须完全匹配下方列表。
+
+**执行规则：**
+1. 分析你当前的回复情绪。
+2. 在下方的【表情包数据库】中查找是否有匹配的关键词。
+3. **如果找到：** 直接复制对应的 Markdown 代码插入到回复中。
+4. **如果没找到：** 就不要发送图片！绝对不要自己编！
 
 你的表情包库存：
 ${stickerListStr}

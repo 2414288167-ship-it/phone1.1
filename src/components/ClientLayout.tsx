@@ -12,24 +12,28 @@ export default function ClientLayout({
   return (
     <AIProvider>
       <MyThemeProvider>
-        {/* 外层容器：深色背景(md屏幕)，手机上浅灰 */}
-        <div className="flex justify-center w-full h-[100dvh] overflow-hidden bg-[#f3f4f6] md:bg-[#050a1f]">
-          {/* 内层容器：手机模拟器 */}
-          <div
-            className="w-full max-w-[500px] h-full flex flex-col relative shadow-2xl bg-[#f3f4f6]"
-            // 👇👇👇 核心修改在这里 👇👇👇
-            // 使用 style 直接设置安全距离，比 Tailwind 写法更稳定
-            style={{
-              paddingTop: "env(safe-area-inset-top)", // 避开顶部刘海/灵动岛
-              paddingBottom: "env(safe-area-inset-bottom)", // 避开底部手势小黑条
-            }}
-          >
-            {/* 内容区域 */}
-            <div className="w-full h-full flex flex-col overflow-hidden">
+        {/* 👇👇👇 修改重点 👇👇👇 */}
+
+        {/* 1. 外层：使用 fixed inset-0 强制占满整个屏幕，不留缝隙 */}
+        {/* z-0 确保它是背景 */}
+        <div className="fixed inset-0 z-0 bg-[#f3f4f6] md:bg-[#050a1f] overflow-hidden">
+          {/* 2. 中间层：居中容器 (适配电脑端，手机端自动全屏) */}
+          <div className="relative w-full h-full max-w-[500px] mx-auto bg-[#f3f4f6] shadow-2xl flex flex-col">
+            {/* 3. 内层：处理安全区域的垫片 */}
+            {/* 这里的 style 会自动把顶部状态栏和底部小黑条的位置“让出来” */}
+            <div
+              className="flex-1 flex flex-col w-full h-full overflow-hidden"
+              style={{
+                paddingTop: "env(safe-area-inset-top)", // 让出顶部刘海
+                paddingBottom: "env(safe-area-inset-bottom)", // 让出底部黑条
+              }}
+            >
               {children}
             </div>
           </div>
         </div>
+
+        {/* 👆👆👆 修改结束 👆👆👆 */}
       </MyThemeProvider>
     </AIProvider>
   );

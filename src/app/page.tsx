@@ -6,7 +6,6 @@ import React, { useState, useEffect } from "react";
 import {
   Settings,
   CloudSun,
-  Calendar,
   Image as ImageIcon,
   Camera,
   BatteryCharging,
@@ -203,7 +202,6 @@ export default function HomePage() {
     >
       <div className="absolute inset-0 bg-blue-100/10 backdrop-blur-[2px]" />
 
-      {/* 🔥🔥🔥 修改1：底部 padding 加大到 28，防止内容被 Dock 遮挡 */}
       <div className="relative z-10 h-full flex flex-col px-6 pt-10 pb-28 max-w-md mx-auto min-h-screen">
         {/* 顶部区域 */}
         <div className="flex justify-between items-start mb-6">
@@ -238,16 +236,43 @@ export default function HomePage() {
               <ToDoWidget />
             </div>
             <div className="grid grid-cols-2 gap-4 justify-items-center mt-2">
-              <AppIcon
-                icon={Calendar}
-                name="日历"
-                color="bg-white text-blue-500"
-              />
-              <AppIcon
-                icon={CloudSun}
-                name="天气"
-                color="bg-gradient-to-b from-blue-300 to-blue-400"
-              />
+              {/* --- 预设 APP (图片版) --- */}
+              <Link
+                href="/preset"
+                className="flex flex-col items-center gap-1 group"
+              >
+                <div className="w-[3.5rem] h-[3.5rem] rounded-2xl flex items-center justify-center shadow-md transition-transform group-active:scale-95 relative overflow-hidden p-1">
+                  {/* 👇👇👇 在这里修改预设图标路径 👇👇👇 */}
+                  <img
+                    src="\icons\博学猫.png"
+                    className="w-full h-full object-contain"
+                    alt="预设"
+                  />
+                </div>
+                <span className="text-xs text-white font-medium drop-shadow-md">
+                  预设
+                </span>
+              </Link>
+
+              {/* --- 音乐 APP (图片版) --- */}
+              <Link
+                href="/music"
+                className="flex flex-col items-center gap-1 group relative"
+              >
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-md transition-transform group-active:scale-95 overflow-hidden">
+                    <img
+                      src="\icons\网易云音乐.png"
+                      className="w-full h-full object-cover scale-110"
+                      alt="音乐"
+                    />
+                  </div>
+                </div>
+                <span className="text-xs text-white font-medium drop-shadow-md">
+                  音乐
+                </span>
+              </Link>
+
               <AppIcon
                 icon={ImageIcon}
                 name="相册"
@@ -303,15 +328,16 @@ export default function HomePage() {
                 href="/notes"
                 className="flex flex-col items-center gap-1 group"
               >
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-md transition-transform group-active:scale-95 border border-white/20">
+                <div className="w-[3.5rem] h-[3.5rem] rounded-2xl flex items-center justify-center shadow-md transition-transform group-active:scale-95 relative overflow-hidden p-1">
+                  {/* 👇👇👇 在这里修改预设图标路径 👇👇👇 */}
                   <img
-                    src="https://i.postimg.cc/ZKMzdKzx/像素风_书籍_copy.png"
-                    alt="世界书"
-                    className="w-10 h-10 object-contain"
+                    src="\icons\橘猫.png"
+                    className="w-full h-full object-contain"
+                    alt="预设"
                   />
                 </div>
                 <span className="text-xs text-white font-medium drop-shadow-md">
-                  世界书
+                  预设
                 </span>
               </Link>
             </div>
@@ -319,8 +345,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 🔥🔥🔥 修改2：使用 absolute positioning 强制固定在底部 🔥🔥🔥 */}
-        {/* bottom-6 大约是 24px (接近0.5cm) */}
         <div className="absolute bottom-6 left-6 right-6 z-50">
           <GlassCard className="flex justify-around items-center py-3 px-2 rounded-[2rem] bg-white/30 border-white/40 shadow-xl">
             <AppIcon icon={Search} color="bg-blue-400" href="/discover" />

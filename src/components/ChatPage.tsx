@@ -55,6 +55,34 @@ export default function ChatPage({
     if (savedMsgs) setMessages(JSON.parse(savedMsgs));
   };
 
+  // 🔥🔥🔥 新增：辅助函数：获取预设上下文 🔥🔥🔥
+  const getPresetContext = (presetId: string | undefined): string => {
+    if (!presetId) return "";
+    try {
+      const presetsStr = localStorage.getItem("app_presets");
+      if (!presetsStr) return "";
+      const presets = JSON.parse(presetsStr);
+      const targetPreset = presets.find((p: any) => p.id === presetId);
+
+      if (!targetPreset || !targetPreset.prompts) return "";
+
+      // 筛选出 enabled 为 true 的 prompt，并按顺序拼接
+      // 注意：Tavern JSON 通常有 prompt_order，这里简化处理，直接按数组顺序
+      // 并且我们只提取 content
+      return targetPreset.prompts
+        .filter((p: any) => p.enabled)
+        .map((p: any) => {
+          // 这里可以根据 p.role 做一些特殊处理，比如如果是 user role，可以加前缀
+          // 但通常 Tavern 预设直接拼接到 System Prompt 里效果最好
+          return p.content;
+        })
+        .join("\n\n");
+    } catch (e) {
+      console.error("预设读取失败", e);
+      return "";
+    }
+  };
+
   useEffect(() => {
     if (conversationId && typeof window !== "undefined") {
       const contactsStr = localStorage.getItem("contacts");

@@ -24,6 +24,68 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
   });
 };
 
+// 🔥🔥🔥 新增：辅助函数：根据输入内容和世界书ID，获取相关的设定文本 🔥🔥🔥
+const getWorldBookContext = (
+  text: string,
+  worldBookId: string | undefined
+): string => {
+  if (!worldBookId || !text) return "";
+
+  try {
+    // 1. 读取所有世界书数据
+    const wbDataStr = localStorage.getItem("worldbook_data");
+    if (!wbDataStr) return "";
+    const wbData = JSON.parse(wbDataStr);
+
+    // 2. 找到当前角色对应的书
+    // 假设 worldBookId 对应的是 categoryId (你在 page.tsx 里是这么存的)
+    const books = wbData.books.filter(
+      (b: any) => String(b.categoryId) === String(worldBookId)
+    );
+
+    if (!books || books.length === 0) return "";
+
+    let foundContexts: string[] = [];
+
+    // 3. 遍历这本书里的所有条目
+    books.forEach((book: any) => {
+      // 兼容两种结构
+      const entries = Array.isArray(book.content) ? book.content : [];
+
+      entries.forEach((entry: any) => {
+        // 检查是否启用
+        if (entry.enabled === false) return;
+
+        // 4. 检查关键词匹配 (entry.keys)
+        if (entry.keys && Array.isArray(entry.keys)) {
+          const isMatch = entry.keys.some((key: string) =>
+            text.toLowerCase().includes(key.toLowerCase())
+          );
+
+          if (isMatch) {
+            console.log(
+              `[世界书触发] 关键词: ${entry.keys} -> 内容: ${entry.content}`
+            );
+            foundContexts.push(entry.content);
+          }
+        }
+      });
+    });
+
+    // 5. 返回拼接后的设定内容
+    if (foundContexts.length > 0) {
+      // 去重
+      const uniqueContexts = Array.from(new Set(foundContexts));
+      return `\n\n[World Info / Additional Context]:\n${uniqueContexts.join(
+        "\n"
+      )}\n`;
+    }
+  } catch (e) {
+    console.error("世界书检索失败", e);
+  }
+  return "";
+};
+
 interface UserProfile {
   avatar: string;
   personas: { id: string; name: string; avatar: string }[];
@@ -81,7 +143,7 @@ export default function ChatPage({ params }: PageProps) {
     return "";
   };
 
-  // --- 2. ✅ 新增：永久记忆注入逻辑 ---
+  // --- 2. 永久记忆注入逻辑 ---
   const getMemoryPrompt = (contact: any) => {
     // 读取 memoryGroups
     const groups = contact.permanentMemory || [];
@@ -354,6 +416,7 @@ export default function ChatPage({ params }: PageProps) {
     handleDeleteMessage(msg.id);
   };
 
+  // 🔥🔥🔥 核心修改：handleUserSend 🔥🔥🔥
   const handleUserSend = (
     text: string,
     type: "text" | "audio" | "image" | "sticker" = "text",
@@ -363,6 +426,7 @@ export default function ChatPage({ params }: PageProps) {
     imageDesc?: string
   ) => {
     if (type === "text" && !text?.trim()) return;
+
     let updatedMessages: Message[] = [];
     setMessages((prev) => {
       let newMessages = [...prev];
@@ -395,13 +459,73 @@ export default function ChatPage({ params }: PageProps) {
       updatedMessages = newMessages;
       return newMessages;
     });
+
     if (type === "text") setInput("");
+
     const isReadyToSendToAI = !(type === "audio" && !text);
     if (isReadyToSendToAI) {
       if (replyTimerRef.current) clearTimeout(replyTimerRef.current);
+
       replyTimerRef.current = setTimeout(() => {
-        if (conversationId && contactInfo)
-          requestAIReply(conversationId, contactInfo, updatedMessages);
+        if (conversationId && contactInfo) {
+          // 🔥 1. 获取针对当前用户输入的“世界书设定”
+          // 这里我们传入当前的文本 (text)，以及角色的 worldBookId
+          const worldBookContext = getWorldBookContext(
+            text,
+            contactInfo.worldBookId
+          );
+          // 🔥 2. 获取预设设定 (新增) 🔥
+          // contactInfo.presetId 是我们在 preset page 里绑定到 localStorage 里的
+          const getPresetContext = (presetId: string | undefined): string => {
+            if (!presetId) return "";
+            try {
+              const presetsStr = localStorage.getItem("app_presets");
+              if (!presetsStr) return "";
+              const presets = JSON.parse(presetsStr);
+              const targetPreset = presets.find((p: any) => p.id === presetId);
+
+              if (!targetPreset || !targetPreset.prompts) return "";
+
+              // 筛选出 enabled 为 true 的 prompt，并按顺序拼接
+              return targetPreset.prompts
+                .filter((p: any) => p.enabled)
+                .map((p: any) => p.content)
+                .join("\n\n");
+            } catch (e) {
+              console.error("预设读取失败", e);
+              return "";
+            }
+          };
+          const presetContext = getPresetContext(contactInfo.presetId);
+
+          // 3. 组合所有“外挂”
+          // 世界书通常是对名词的解释，放在 [World Info] 里
+          // 预设通常是文风控制，放在开头或结尾
+
+          let additionalPrompt = "";
+
+          if (presetContext) {
+            additionalPrompt += `\n\n[System Directives / Writing Style Guide]:\n${presetContext}\n`;
+          }
+
+          if (worldBookContext) {
+            additionalPrompt += worldBookContext;
+          }
+
+          const enhancedContactInfo = {
+            ...contactInfo,
+            aiPersona: (contactInfo.aiPersona || "") + additionalPrompt,
+          };
+
+          // 🔥🔥🔥 新增：打印最终发给 AI 的人设，检查预设是否在里面 🔥🔥🔥
+          console.log(
+            "====== 最终发送给 AI 的系统提示词 (System Prompt) ======"
+          );
+          console.log(enhancedContactInfo.aiPersona);
+          console.log("======================================================");
+
+          requestAIReply(conversationId, enhancedContactInfo, updatedMessages);
+        }
       }, 6000);
     }
   };
