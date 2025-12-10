@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -40,14 +40,16 @@ interface WorldBookData {
   categories: Category[];
 }
 
-export default function NotesPage() {
+// 内部组件：使用 searchParams 的逻辑
+function NotesPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams(); // ✅ 获取 URL 参数
+  const searchParams = useSearchParams(); // ✅ 在 Suspense 边界内使用
 
   // --- 2. 状态管理 ---
   const [data, setData] = useState<WorldBookData | null>(null);
   const [activeTabId, setActiveTabId] = useState<number | "all">("all");
   const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // --- 3. 初始化 ---
@@ -85,6 +87,7 @@ export default function NotesPage() {
         console.error("读取缓存失败", e);
       }
     }
+    setIsInitialized(true);
   }, [searchParams]); // 依赖 searchParams 变化
 
   // --- 4. 核心功能 ---
@@ -165,7 +168,7 @@ export default function NotesPage() {
           books: newBooks,
           categories: newCategories,
         });
-        setActiveTabId("all"); // 删完后回到“全部”
+        setActiveTabId("all"); // 删完后回到"全部"
       }
     }
   };
@@ -212,7 +215,19 @@ export default function NotesPage() {
     setEditingBook(null);
   };
 
-  // --- 5. 视图渲染 ---
+  // --- 5. 加载状态组件 ---
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-[#f2f4f8] flex items-center justify-center">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-300 rounded w-48"></div>
+          <div className="h-4 bg-gray-200 rounded w-32"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- 6. 视图渲染 ---
 
   const renderListView = () => {
     const filteredBooks =
@@ -549,5 +564,23 @@ export default function NotesPage() {
       />
       {editingBook ? renderDetailView() : renderListView()}
     </div>
+  );
+}
+
+// 外部包裹器：使用 Suspense 提供边界
+export default function NotesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f2f4f8] flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">加载中...</p>
+          </div>
+        </div>
+      }
+    >
+      <NotesPageContent />
+    </Suspense>
   );
 }

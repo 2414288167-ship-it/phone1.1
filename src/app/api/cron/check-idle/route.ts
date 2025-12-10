@@ -19,6 +19,15 @@ interface StoredUserData {
 
 export async function GET() {
   try {
+    // 检查环境变量是否存在
+    if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+      console.log("⚠️ KV 环境变量未配置，跳过推送检查");
+      return NextResponse.json({
+        message: "KV not configured - skipping push check",
+        skipped: true,
+      });
+    }
+
     // 1. 从 Redis 拉取所有用户的订阅数据
     const allUsers = await kv.hgetall("active_push_users");
 
